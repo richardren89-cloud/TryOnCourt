@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "rootDir": ".",
+    "outDir": "dist-worker",
+    "noEmit": false,
+    "incremental": false,
+    "declaration": false,
+    "sourceMap": true
+  },
+  "include": ["worker/**/*.ts"],
+  "exclude": ["node_modules", "tests"]
+}

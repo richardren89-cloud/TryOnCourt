@@ -17,6 +17,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
+RUN npm run build:worker
 
 FROM base AS runner
 ENV NODE_ENV=production
@@ -31,9 +32,9 @@ RUN groupadd --system --gid 1001 nodejs \
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/worker ./worker
+COPY --from=builder --chown=nextjs:nodejs /app/dist-worker ./dist-worker
 
 USER nextjs
 EXPOSE 3000
 
-CMD ["sh", "-c", "case \"$PROCESS_ROLE\" in web) exec node server.js ;; worker) exec node --experimental-strip-types worker/index.ts ;; *) echo \"PROCESS_ROLE must be web or worker\" >&2; exit 64 ;; esac"]
+CMD ["sh", "-c", "case \"$PROCESS_ROLE\" in web) exec node server.js ;; worker) exec node dist-worker/worker/index.js ;; *) echo \"PROCESS_ROLE must be web or worker\" >&2; exit 64 ;; esac"]

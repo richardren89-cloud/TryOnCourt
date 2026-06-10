@@ -1,5 +1,6 @@
 .git
 .next
+dist-worker
 node_modules
 coverage
 playwright-report

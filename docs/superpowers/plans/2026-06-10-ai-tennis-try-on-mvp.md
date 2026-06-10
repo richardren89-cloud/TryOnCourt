@@ -6,7 +6,7 @@
 
 **Architecture:** Use one Next.js App Router application for pages and business APIs, plus a separate TypeScript worker process from the same repository. MySQL is the source of truth, RabbitMQ carries generation job IDs, COS stores private image objects, and provider/storage/queue interfaces keep local tests independent from Tencent Cloud.
 
-**Tech Stack:** Node.js 24 LTS, Next.js 16.2.x, React 19, TypeScript, Prisma ORM 7 with MySQL 8, RabbitMQ via `amqplib`, Tencent COS SDK, Zod, `@node-rs/argon2`, Vitest 4, Testing Library, Playwright, Docker Compose, Tencent Cloud container hosting/MySQL/RabbitMQ/COS.
+**Tech Stack:** Node.js 24 LTS, Next.js 16.2.x, React 19, TypeScript, Prisma ORM 7 with MySQL 8, RabbitMQ via `amqplib`, Tencent COS REST API with Node `crypto`/`fetch`, Zod, `@node-rs/argon2`, Vitest 4, Testing Library, Playwright, Docker Compose, Tencent Cloud container hosting/MySQL/RabbitMQ/COS.
 
 ---
 
@@ -75,7 +75,7 @@ Expected: Next.js files are created; `docs/` and `.git/` remain intact.
 Run:
 
 ```bash
-npm install @prisma/client zod @node-rs/argon2 amqplib cos-nodejs-sdk-v5
+npm install @prisma/client zod @node-rs/argon2 amqplib
 npm install -D prisma vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/jest-dom @playwright/test tsx
 ```
 
@@ -367,7 +367,7 @@ Tests must reject non-JPEG/PNG/WebP files, oversized files, spoofed MIME headers
 
 - [ ] **Step 2: Implement local and COS adapters**
 
-The local adapter writes only under a configured development directory. The COS adapter uses a private bucket, server-generated object keys, short expiration, and no public ACL.
+The local adapter writes only under a configured development directory. The COS adapter uses a private bucket, server-generated object keys, short expiration, and no public ACL. Implement COS operations as signed REST requests with Node 24's native `crypto` and `fetch`; do not introduce the legacy `request`/XML dependency chain that currently carries critical audit findings. A replacement SDK may be considered only after its production dependency tree passes security review.
 
 - [ ] **Step 3: Implement the two-photo uploader**
 
