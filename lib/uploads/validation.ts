@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+import { assertSafeImageUpload } from "@/lib/security/content-safety";
+
 const extensionsByContentType = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -12,7 +13,7 @@ export type SupportedImageType = keyof typeof extensionsByContentType;
 
 export const uploadRequestSchema = z.object({
   kind: z.enum(["FULL_BODY", "HEADSHOT"]),
-  fileName: z.string().min(1),
+  fileName: z.string().min(1).optional(),
   contentType: z.string().min(1),
   byteSize: z.number().int().positive(),
 });
@@ -27,9 +28,7 @@ export function validateUploadRequest(raw: unknown): {
   if (!isSupportedImageType(input.contentType)) {
     throw new Error("Unsupported image type.");
   }
-  if (input.byteSize > MAX_UPLOAD_BYTES) {
-    throw new Error("Image is too large.");
-  }
+  assertSafeImageUpload({ contentType: input.contentType, byteSize: input.byteSize });
 
   return {
     kind: input.kind,

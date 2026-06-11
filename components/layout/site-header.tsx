@@ -10,6 +10,7 @@ export function SiteHeader() {
         <Link href="/outfits">穿搭橱窗</Link>
         <Link href="/history">生成历史</Link>
         <Link href="/credits">积分</Link>
+        <Link href="/settings">设置</Link>
         <Link href="/login">登录</Link>
       </nav>
     </header>

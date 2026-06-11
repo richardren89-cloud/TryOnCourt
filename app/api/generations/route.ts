@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/require-user";
 import { createGenerationJob } from "@/lib/generations/service";
 import { getDb } from "@/lib/db";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 const createGenerationSchema = z.object({
   outfitId: z.string().min(1),
@@ -16,6 +17,14 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  }
+  const rateLimit = checkRateLimit({
+    key: `generation:${user.id}`,
+    limit: 10,
+    windowMs: 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "Too many generation requests." }, { status: 429 });
   }
 
   const idempotencyKey = request.headers.get("idempotency-key");
