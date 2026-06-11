@@ -133,8 +133,9 @@ git commit -m "chore: bootstrap tennis try-on application"
 
 **Files:**
 - Create: `prisma/schema.prisma`, `prisma/seed.ts`, `prisma.config.ts`
+- Create: `prisma/migrations/<timestamp>_init/migration.sql`, `prisma/migrations/migration_lock.toml`
 - Create: `lib/db.ts`, `lib/catalog/types.ts`, `lib/catalog/repository.ts`
-- Test: `tests/integration/catalog-repository.test.ts`
+- Test: `tests/integration/catalog-repository.test.ts`, `tests/unit/catalog-seed-shape.test.ts`, `tests/unit/db.test.ts`
 
 - [ ] **Step 1: Write a failing repository test**
 
@@ -162,13 +163,15 @@ model CreditLedgerEntry {
   userId      String
   type        LedgerType
   amount      Int
-  businessKey String     @unique
+  businessKey String
   createdAt   DateTime   @default(now())
   user        User       @relation(fields: [userId], references: [id])
+  @@unique([userId, businessKey])
 }
 
 model GenerationJob {
   id             String           @id @default(cuid())
+  clientKey      String
   userId         String
   outfitId       String
   status         GenerationStatus @default(PENDING)
@@ -180,8 +183,11 @@ model GenerationJob {
   updatedAt      DateTime         @updatedAt
   @@index([userId, createdAt])
   @@index([status, leaseExpiresAt])
+  @@unique([userId, clientKey])
 }
 ```
+
+Idempotency keys are scoped per user: the same external key may be reused by different users, while duplicate ledger events or generation requests for one user remain rejected. Generation photo relations use composite `(photoId, userId)` foreign keys so both source photos must belong to the job owner.
 
 - [ ] **Step 3: Seed ten auditable placeholders**
 
@@ -198,7 +204,7 @@ npm run db:seed
 npm test -- tests/integration/catalog-repository.test.ts
 ```
 
-Expected: migration succeeds; test passes after its fixture publishes ten test outfits.
+When MySQL is unavailable, generate and commit the initial migration with `prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script --output prisma/migrations/<timestamp>_init/migration.sql`, add `migration_lock.toml` with `provider = "mysql"`, and report that it was not applied. Expected with MySQL: migration succeeds; test passes after its fixture publishes ten test outfits.
 
 - [ ] **Step 5: Commit**
 
@@ -330,7 +336,7 @@ it("refunds a business key once", async () => {
 
 - [ ] **Step 2: Implement ledger-only balance calculations**
 
-Do not maintain a separately mutable balance column. Sum ledger amounts inside the transaction that creates a spend, use a per-user database advisory lock or `SELECT ... FOR UPDATE` on the user row, and rely on unique `businessKey` values for idempotency.
+Do not maintain a separately mutable balance column. Sum ledger amounts inside the transaction that creates a spend, use a per-user database advisory lock or `SELECT ... FOR UPDATE` on the user row, and rely on the composite unique `(userId, businessKey)` for per-user idempotency.
 
 - [ ] **Step 3: Build the credit page and insufficient-credit result**
 
@@ -392,7 +398,7 @@ git commit -m "feat: add private two-photo uploads"
 
 - [ ] **Step 1: Write failing transaction tests**
 
-Test that creating a job in one transaction writes: one `-1` ledger entry, one `PENDING` job, and one unpublished outbox row. Repeat the same idempotency key and verify no duplicate spend or job.
+Test that creating a job in one transaction writes: one `-1` ledger entry, one `PENDING` job, and one unpublished outbox row. Repeat the same idempotency key for the same user and verify no duplicate spend or job; verify a different user may reuse that external key.
 
 - [ ] **Step 2: Implement allowed state transitions**
 
@@ -407,7 +413,7 @@ const allowed = {
 
 - [ ] **Step 3: Implement create-generation transaction**
 
-Validate ownership of both photos, selected outfit publication, and consent. Use request header `Idempotency-Key`; store it as the job client key and ledger business key.
+Validate ownership of both photos, selected outfit publication, and consent. Use request header `Idempotency-Key`; store it as the job client key and ledger business key. Both keys are unique only within the owning user via `(userId, clientKey)` and `(userId, businessKey)`.
 
 - [ ] **Step 4: Implement reliable outbox publication**
 

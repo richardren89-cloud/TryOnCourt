@@ -191,11 +191,12 @@ model CreditLedgerEntry {
   userId      String
   type        LedgerType
   amount      Int
-  businessKey String     @unique
+  businessKey String
   note        String?
   createdAt   DateTime   @default(now())
   user        User       @relation(fields: [userId], references: [id], onDelete: Restrict)
 
+  @@unique([userId, businessKey])
   @@index([userId, createdAt])
   @@index([userId, type])
 }
@@ -216,12 +217,13 @@ model UploadedPhoto {
   fullBodyJobs   GenerationJob[] @relation("GenerationFullBodyPhoto")
   headshotJobs   GenerationJob[] @relation("GenerationHeadshotPhoto")
 
+  @@unique([id, userId])
   @@index([userId, kind, deletedAt])
 }
 
 model GenerationJob {
   id              String           @id @default(cuid())
-  clientKey       String           @unique
+  clientKey       String
   userId          String
   outfitId        String
   fullBodyPhotoId String
@@ -235,16 +237,17 @@ model GenerationJob {
   updatedAt       DateTime         @updatedAt
   user            User             @relation(fields: [userId], references: [id], onDelete: Restrict)
   outfit          Outfit           @relation(fields: [outfitId], references: [id], onDelete: Restrict)
-  fullBodyPhoto   UploadedPhoto    @relation("GenerationFullBodyPhoto", fields: [fullBodyPhotoId], references: [id], onDelete: Restrict)
-  headshotPhoto   UploadedPhoto    @relation("GenerationHeadshotPhoto", fields: [headshotPhotoId], references: [id], onDelete: Restrict)
+  fullBodyPhoto   UploadedPhoto    @relation("GenerationFullBodyPhoto", fields: [fullBodyPhotoId, userId], references: [id, userId], onDelete: Restrict)
+  headshotPhoto   UploadedPhoto    @relation("GenerationHeadshotPhoto", fields: [headshotPhotoId, userId], references: [id, userId], onDelete: Restrict)
   generatedAssets GeneratedAsset[]
   queueOutbox     QueueOutbox?
 
+  @@unique([userId, clientKey])
   @@index([userId, createdAt])
   @@index([status, leaseExpiresAt])
   @@index([outfitId])
-  @@index([fullBodyPhotoId])
-  @@index([headshotPhotoId])
+  @@index([fullBodyPhotoId, userId])
+  @@index([headshotPhotoId, userId])
 }
 
 model GeneratedAsset {

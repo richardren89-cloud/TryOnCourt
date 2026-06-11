@@ -19,24 +19,86 @@ if (testDatabaseUrl) {
       });
 
       for (let index = 0; index < 10; index += 1) {
+        const displayOrder = 10 - index;
+        const verifiedAt = new Date(Date.UTC(2026, 0, index + 1));
         await db.player.create({
           data: {
             slug: `${fixturePrefix}-player-${index + 1}`,
             displayName: `Fixture Player ${index + 1}`,
             tour: index < 5 ? "ATP" : "WTA",
+            rankingSnapshots: {
+              create: [
+                {
+                  rank: 100 + index,
+                  verifiedAt: new Date(Date.UTC(2025, 0, index + 1)),
+                  sourceUrl: `https://example.test/rank/old/${index + 1}`,
+                },
+                {
+                  rank: index + 1,
+                  verifiedAt,
+                  sourceUrl: `https://example.test/rank/current/${index + 1}`,
+                },
+              ],
+            },
             outfits: {
               create: {
                 slug: `${fixturePrefix}-outfit-${index + 1}`,
                 title: `Fixture Outfit ${index + 1}`,
                 type: "PLAYER_INSPIRED",
                 season: "TEST",
-                displayOrder: 10 - index,
+                rankingVerifiedAt: verifiedAt,
+                displayOrder,
                 published: true,
+                items: {
+                  create: [
+                    {
+                      category: "SHOES",
+                      displayName: `Fixture Shoes ${index + 1}`,
+                      displayOrder: 2,
+                    },
+                    {
+                      category: "TOP",
+                      displayName: `Fixture Top ${index + 1}`,
+                      displayOrder: 1,
+                    },
+                  ],
+                },
+                sourceReferences: {
+                  create: [
+                    {
+                      sourceKey: `${fixturePrefix}-source-later-${index + 1}`,
+                      label: "Later source",
+                      url: `https://example.test/source/later/${index + 1}`,
+                      verificationStatus: "VERIFIED",
+                      verifiedAt,
+                      createdAt: new Date(Date.UTC(2026, 1, 2)),
+                    },
+                    {
+                      sourceKey: `${fixturePrefix}-source-earlier-${index + 1}`,
+                      label: "Earlier source",
+                      url: `https://example.test/source/earlier/${index + 1}`,
+                      verificationStatus: "VERIFIED",
+                      verifiedAt,
+                      createdAt: new Date(Date.UTC(2026, 1, 1)),
+                    },
+                  ],
+                },
               },
             },
           },
         });
       }
+
+      await db.outfit.create({
+        data: {
+          slug: `${fixturePrefix}-unpublished`,
+          title: "Unpublished Fixture Outfit",
+          type: "PLAYER_INSPIRED",
+          season: "TEST",
+          displayOrder: 0,
+          published: false,
+        },
+      });
     });
 
     afterAll(async () => {
@@ -57,8 +119,27 @@ if (testDatabaseUrl) {
 
       expect(fixtures).toHaveLength(10);
       expect(fixtures.every((item) => item.type === "PLAYER_INSPIRED")).toBe(true);
+      expect(fixtures.some((item) => item.slug.endsWith("-unpublished"))).toBe(
+        false,
+      );
       expect(fixtures.map((item) => item.displayOrder)).toEqual([
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+      ]);
+      expect(fixtures[0]).toMatchObject({
+        rankingVerifiedAt: "2026-01-10T00:00:00.000Z",
+        player: {
+          displayName: "Fixture Player 10",
+          tour: "WTA",
+          rank: 10,
+        },
+      });
+      expect(fixtures[0]?.items.map((item) => item.category)).toEqual([
+        "TOP",
+        "SHOES",
+      ]);
+      expect(fixtures[0]?.sources.map((source) => source.label)).toEqual([
+        "Earlier source",
+        "Later source",
       ]);
     });
   });

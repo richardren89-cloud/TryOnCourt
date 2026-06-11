@@ -27,6 +27,12 @@ export const outfitPlaceholders: readonly OutfitPlaceholder[] = [
   ...createTourPlaceholders("WTA"),
 ];
 
+export const placeholderUpsertUpdates = {
+  player: {},
+  outfit: {},
+  source: {},
+} as const;
+
 function createTourPlaceholders(tour: PlaceholderTour): OutfitPlaceholder[] {
   return Array.from({ length: 5 }, (_, index) => {
     const number = index + 1;
@@ -59,10 +65,7 @@ export async function seedCatalog(): Promise<void> {
     for (const placeholder of outfitPlaceholders) {
       const player = await db.player.upsert({
         where: { slug: placeholder.playerSlug },
-        update: {
-          displayName: placeholder.playerDisplayName,
-          tour: placeholder.tour,
-        },
+        update: placeholderUpsertUpdates.player,
         create: {
           slug: placeholder.playerSlug,
           displayName: placeholder.playerDisplayName,
@@ -72,15 +75,7 @@ export async function seedCatalog(): Promise<void> {
 
       const outfit = await db.outfit.upsert({
         where: { slug: placeholder.outfitSlug },
-        update: {
-          title: placeholder.outfitTitle,
-          type: "PLAYER_INSPIRED",
-          season: placeholder.season,
-          rankingVerifiedAt: placeholder.rankingVerifiedAt,
-          displayOrder: placeholder.displayOrder,
-          published: placeholder.published,
-          playerId: player.id,
-        },
+        update: placeholderUpsertUpdates.outfit,
         create: {
           slug: placeholder.outfitSlug,
           title: placeholder.outfitTitle,
@@ -95,13 +90,7 @@ export async function seedCatalog(): Promise<void> {
 
       await db.sourceReference.upsert({
         where: { sourceKey: placeholder.source.key },
-        update: {
-          outfitId: outfit.id,
-          label: placeholder.source.label,
-          url: placeholder.source.url,
-          verificationStatus: placeholder.source.verificationStatus,
-          verifiedAt: null,
-        },
+        update: placeholderUpsertUpdates.source,
         create: {
           sourceKey: placeholder.source.key,
           outfitId: outfit.id,

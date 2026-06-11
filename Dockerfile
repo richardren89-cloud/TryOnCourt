@@ -15,6 +15,9 @@ RUN npm ci --omit=dev
 FROM base AS builder
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+RUN DATABASE_URL=mysql://prisma:prisma@localhost:3306/prisma npx prisma generate
 COPY . .
 RUN npm run build
 RUN npm run build:worker
@@ -33,6 +36,7 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/dist-worker ./dist-worker
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 USER nextjs
 EXPOSE 3000
