@@ -1,3 +1,7 @@
 import { WORKER_ROLE } from "./runtime";
 
-console.log(`CourtFit ${WORKER_ROLE} bootstrap ready`);
+async function main() {
+  console.log(`CourtFit ${WORKER_ROLE} bootstrap ready`);
+}
+
+void main();

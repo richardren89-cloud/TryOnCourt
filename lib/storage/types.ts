@@ -13,5 +13,7 @@ export interface PrivateObjectStore {
     maxBytes: number;
   }): Promise<SignedUpload>;
   createDownload(key: string, expiresSeconds: number): Promise<string>;
+  read(key: string): Promise<Uint8Array>;
+  write(input: { key: string; body: Uint8Array; contentType: string }): Promise<void>;
   delete(key: string): Promise<void>;
 }
