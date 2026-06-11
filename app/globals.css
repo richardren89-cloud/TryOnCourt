@@ -258,6 +258,57 @@ p {
   gap: 0.4rem;
 }
 
+.try-on-layout,
+.history-list {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.try-on-card,
+.generation-status,
+.history-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.try-on-card h1 {
+  font-size: clamp(2rem, 5vw, 4rem);
+}
+
+.try-on-card label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.inline-choice {
+  align-items: center;
+  display: flex;
+}
+
+button.button {
+  cursor: pointer;
+  font: inherit;
+}
+
+button.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.upgrade-modal {
+  background: #fff8d6;
+  border: 1px solid #eadb86;
+  border-radius: 1rem;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
 .auth-page input {
   border: 1px solid var(--line);
   border-radius: 0.75rem;
