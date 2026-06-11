@@ -1,0 +1,282 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum OutfitType {
+  PLAYER_INSPIRED
+  OWN_BRAND
+}
+
+enum Tour {
+  ATP
+  WTA
+}
+
+enum PhotoKind {
+  FULL_BODY
+  HEADSHOT
+}
+
+enum GenerationStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED_REFUNDED
+}
+
+enum LedgerType {
+  SIGNUP_BONUS
+  GENERATION_SPEND
+  GENERATION_REFUND
+  ADJUSTMENT
+}
+
+model User {
+  id             String              @id @default(cuid())
+  username       String              @unique
+  passwordHash   String
+  dateOfBirth    DateTime?
+  termsVersion   String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+  consents       ConsentRecord[]
+  sessions       Session[]
+  ledgerEntries  CreditLedgerEntry[]
+  uploadedPhotos UploadedPhoto[]
+  generationJobs GenerationJob[]
+
+  @@index([deletedAt])
+}
+
+model ConsentRecord {
+  id              String   @id @default(cuid())
+  userId          String
+  termsVersion    String
+  privacyVersion  String
+  ageConfirmed    Boolean
+  guardianConsent Boolean  @default(false)
+  acceptedAt      DateTime @default(now())
+  ipHash          String?
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, acceptedAt])
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+  lastSeenAt DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt, revokedAt])
+}
+
+model Player {
+  id               String            @id @default(cuid())
+  slug             String            @unique
+  displayName      String
+  tour             Tour
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  rankingSnapshots RankingSnapshot[]
+  outfits          Outfit[]
+
+  @@index([tour, displayName])
+}
+
+model RankingSnapshot {
+  id         String   @id @default(cuid())
+  playerId   String
+  rank       Int
+  verifiedAt DateTime
+  sourceUrl  String   @db.Text
+  createdAt  DateTime @default(now())
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, verifiedAt])
+  @@index([playerId, rank])
+}
+
+model Collection {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  description  String?  @db.Text
+  displayOrder Int      @default(0)
+  published    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  outfits      Outfit[]
+
+  @@index([published, displayOrder])
+}
+
+model Outfit {
+  id                String            @id @default(cuid())
+  slug              String            @unique
+  title             String
+  description       String?           @db.Text
+  type              OutfitType
+  season            String
+  rankingVerifiedAt DateTime?
+  coverImageUrl     String?           @db.Text
+  promptDescription String?           @db.Text
+  displayOrder      Int               @default(0)
+  published         Boolean           @default(false)
+  playerId          String?
+  collectionId      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  player            Player?           @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  collection        Collection?       @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  items             OutfitItem[]
+  sourceReferences  SourceReference[]
+  generationJobs    GenerationJob[]
+
+  @@index([published, displayOrder])
+  @@index([type, published])
+  @@index([playerId])
+  @@index([collectionId])
+}
+
+model OutfitItem {
+  id                String            @id @default(cuid())
+  outfitId          String
+  category          String
+  displayName       String
+  brand             String?
+  productName       String?
+  colorDescription  String?
+  promptDescription String?           @db.Text
+  displayOrder      Int               @default(0)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  outfit            Outfit            @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  sourceReferences  SourceReference[]
+
+  @@index([outfitId, displayOrder])
+}
+
+model SourceReference {
+  id                 String      @id @default(cuid())
+  sourceKey          String      @unique
+  outfitId           String
+  outfitItemId       String?
+  label              String
+  url                String      @db.Text
+  verificationStatus String      @default("PENDING")
+  verifiedAt         DateTime?
+  notes              String?     @db.Text
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  outfit             Outfit      @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  outfitItem         OutfitItem? @relation(fields: [outfitItemId], references: [id], onDelete: SetNull)
+
+  @@index([outfitId, verificationStatus])
+  @@index([outfitItemId])
+}
+
+model CreditLedgerEntry {
+  id          String     @id @default(cuid())
+  userId      String
+  type        LedgerType
+  amount      Int
+  businessKey String
+  note        String?
+  createdAt   DateTime   @default(now())
+  user        User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, businessKey])
+  @@index([userId, createdAt])
+  @@index([userId, type])
+}
+
+model UploadedPhoto {
+  id             String          @id @default(cuid())
+  userId         String
+  kind           PhotoKind
+  storageKey     String          @unique
+  mimeType       String
+  byteSize       Int
+  width          Int?
+  height         Int?
+  checksumSha256 String?
+  createdAt      DateTime        @default(now())
+  deletedAt      DateTime?
+  user           User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  fullBodyJobs   GenerationJob[] @relation("GenerationFullBodyPhoto")
+  headshotJobs   GenerationJob[] @relation("GenerationHeadshotPhoto")
+
+  @@unique([id, userId])
+  @@index([userId, kind, deletedAt])
+}
+
+model GenerationJob {
+  id              String           @id @default(cuid())
+  clientKey       String
+  userId          String
+  outfitId        String
+  fullBodyPhotoId String
+  headshotPhotoId String
+  status          GenerationStatus @default(PENDING)
+  saveSource      Boolean          @default(false)
+  attemptCount    Int              @default(0)
+  failureCode     String?
+  leaseExpiresAt  DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  user            User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  outfit          Outfit           @relation(fields: [outfitId], references: [id], onDelete: Restrict)
+  fullBodyPhoto   UploadedPhoto    @relation("GenerationFullBodyPhoto", fields: [fullBodyPhotoId, userId], references: [id, userId], onDelete: Restrict)
+  headshotPhoto   UploadedPhoto    @relation("GenerationHeadshotPhoto", fields: [headshotPhotoId, userId], references: [id, userId], onDelete: Restrict)
+  generatedAssets GeneratedAsset[]
+  queueOutbox     QueueOutbox?
+
+  @@unique([userId, clientKey])
+  @@index([userId, createdAt])
+  @@index([status, leaseExpiresAt])
+  @@index([outfitId])
+  @@index([fullBodyPhotoId, userId])
+  @@index([headshotPhotoId, userId])
+}
+
+model GeneratedAsset {
+  id         String        @id @default(cuid())
+  jobId      String
+  storageKey String        @unique
+  mimeType   String
+  byteSize   Int
+  width      Int?
+  height     Int?
+  createdAt  DateTime      @default(now())
+  deletedAt  DateTime?
+  job        GenerationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, deletedAt])
+}
+
+model QueueOutbox {
+  id              String        @id @default(cuid())
+  generationJobId String        @unique
+  topic           String
+  payload         Json
+  publishedAt     DateTime?
+  attemptCount    Int           @default(0)
+  lastError       String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  generationJob   GenerationJob @relation(fields: [generationJobId], references: [id], onDelete: Cascade)
+
+  @@index([publishedAt, createdAt])
+  @@index([attemptCount, publishedAt])
+}

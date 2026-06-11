@@ -1,0 +1,17 @@
+.worktrees/
+.superpowers/
+node_modules/
+.next/
+out/
+build/
+dist-worker/
+coverage/
+playwright-report/
+test-results/
+.eval-output/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+npm-debug.log*
+.DS_Store
