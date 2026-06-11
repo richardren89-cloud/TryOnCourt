@@ -18,3 +18,10 @@ export type ProviderFailure =
   | { kind: "TRANSIENT"; code: string }
   | { kind: "PERMANENT"; code: string }
   | { kind: "SAFETY_REJECTED"; code: string };
+
+export class ImageProviderError extends Error {
+  constructor(readonly failure: ProviderFailure, message = failure.code) {
+    super(message);
+    this.name = "ImageProviderError";
+  }
+}

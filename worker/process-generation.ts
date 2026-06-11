@@ -1,4 +1,4 @@
-import type { ProviderFailure } from "@/lib/image-provider/types";
+import { ImageProviderError, type ProviderFailure } from "@/lib/image-provider/types";
 import { buildTryOnPrompt } from "@/lib/generations/prompt";
 import { cleanupSourcePhotos } from "@/lib/uploads/cleanup";
 import type { ImageProvider } from "@/lib/image-provider/types";
@@ -312,6 +312,9 @@ function generatedObjectKey(job: WorkerJob, mimeType: "image/png" | "image/jpeg"
 
 function classifyError(error: unknown): ProviderFailure {
   if (error instanceof ImageGenerationFailure) {
+    return error.failure;
+  }
+  if (error instanceof ImageProviderError) {
     return error.failure;
   }
 
