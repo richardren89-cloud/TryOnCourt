@@ -139,6 +139,20 @@ p {
   box-shadow: 0 1rem 2rem rgba(16, 35, 24, 0.06);
 }
 
+.upload-panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.upload-panel label {
+  display: grid;
+  gap: 0.4rem;
+}
+
 .steps article {
   padding: 1.5rem;
 }
