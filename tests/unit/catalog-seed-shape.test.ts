@@ -3,41 +3,37 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  outfitPlaceholders,
-  placeholderUpsertUpdates,
-} from "@/prisma/seed";
+import { rankingSources, rankingVerifiedAt, topTenSeedOutfits } from "@/prisma/seed";
 
-describe("catalog seed placeholders", () => {
-  it("defines ten unpublished placeholders split evenly across ATP and WTA", () => {
-    expect(outfitPlaceholders).toHaveLength(10);
-    expect(outfitPlaceholders.every((item) => item.published === false)).toBe(true);
-    expect(outfitPlaceholders.filter((item) => item.tour === "ATP")).toHaveLength(5);
-    expect(outfitPlaceholders.filter((item) => item.tour === "WTA")).toHaveLength(5);
+describe("catalog seed top-ten content", () => {
+  it("defines ten published player-inspired outfits split evenly across ATP and WTA", () => {
+    expect(topTenSeedOutfits).toHaveLength(10);
+    expect(topTenSeedOutfits.filter((item) => item.tour === "ATP")).toHaveLength(5);
+    expect(topTenSeedOutfits.filter((item) => item.tour === "WTA")).toHaveLength(5);
+    expect(topTenSeedOutfits.map((item) => item.displayOrder)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    ]);
   });
 
-  it("uses unique stable slugs and pending placeholder sources", () => {
-    const playerSlugs = outfitPlaceholders.map((item) => item.playerSlug);
-    const outfitSlugs = outfitPlaceholders.map((item) => item.outfitSlug);
+  it("uses unique stable slugs and official ranking sources", () => {
+    const playerSlugs = topTenSeedOutfits.map((item) => item.playerSlug);
+    const outfitSlugs = topTenSeedOutfits.map((item) => item.outfitSlug);
 
     expect(new Set(playerSlugs).size).toBe(10);
     expect(new Set(outfitSlugs).size).toBe(10);
-    expect(
-      outfitPlaceholders.every(
-        (item) =>
-          item.rankingVerifiedAt === null &&
-          item.source.verificationStatus === "PENDING" &&
-          item.source.url.startsWith("https://example.invalid/"),
-      ),
-    ).toBe(true);
+    expect(rankingVerifiedAt.toISOString()).toBe("2026-06-11T00:00:00.000Z");
+    expect(rankingSources.ATP).toBe("https://www.atptour.com/en/rankings/singles");
+    expect(rankingSources.WTA).toBe("https://www.wtatennis.com/rankings/singles");
   });
 
-  it("never downgrades existing verified or published records during upsert", () => {
-    expect(placeholderUpsertUpdates).toEqual({
-      player: {},
-      outfit: {},
-      source: {},
-    });
+  it("has complete item, source, and original flat-lay metadata", () => {
+    for (const outfit of topTenSeedOutfits) {
+      expect(outfit.coverImageUrl).toBe(`/demo-outfits/${outfit.outfitSlug}/flatlay.svg`);
+      expect(outfit.sources).toHaveLength(3);
+      expect(outfit.sources.every((source) => source.url.length > 0)).toBe(true);
+      expect(outfit.items).toHaveLength(6);
+      expect(outfit.items.every((item) => item.brand && item.productName)).toBe(true);
+    }
   });
 });
 
