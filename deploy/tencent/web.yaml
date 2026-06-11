@@ -1,0 +1,26 @@
+service: courtfit-web
+region: ap-beijing
+image: ${TCR_IMAGE}
+port: 3000
+env:
+  PROCESS_ROLE: web
+  NODE_ENV: production
+  IMAGE_PROVIDER: volcengine-ark
+  ARK_MODEL: doubao-seed-1-8-251228
+secrets:
+  DATABASE_URL: courtfit/prod/database-url
+  RABBITMQ_URL: courtfit/prod/rabbitmq-url
+  COS_SECRET_ID: courtfit/prod/cos-secret-id
+  COS_SECRET_KEY: courtfit/prod/cos-secret-key
+  COS_BUCKET: courtfit/prod/cos-bucket
+  COS_REGION: courtfit/prod/cos-region
+  ARK_API_KEY: courtfit/prod/ark-api-key
+probes:
+  liveness: /api/health/live
+  readiness: /api/health/ready
+resources:
+  cpu: "1"
+  memory: 2Gi
+ingress:
+  public: true
+  tls: required
