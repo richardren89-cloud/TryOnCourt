@@ -29,10 +29,22 @@ export function sessionCookieOptions(expires: Date): SessionCookieOptions {
   return {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureSessionCookie(),
     path: "/",
     expires,
   };
+}
+
+function shouldUseSecureSessionCookie(): boolean {
+  if (process.env.SESSION_COOKIE_SECURE === "false") {
+    return false;
+  }
+
+  if (process.env.SESSION_COOKIE_SECURE === "true") {
+    return true;
+  }
+
+  return process.env.NODE_ENV === "production";
 }
 
 export async function createSession(
