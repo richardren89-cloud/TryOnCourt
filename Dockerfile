@@ -35,6 +35,7 @@ RUN groupadd --system --gid 1001 nodejs \
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/dist-worker ./dist-worker
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
