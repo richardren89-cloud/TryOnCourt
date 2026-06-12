@@ -188,7 +188,16 @@ p {
   display: grid;
   font-weight: 800;
   min-height: 11rem;
+  overflow: hidden;
   place-items: center;
+}
+
+.outfit-card__image img,
+.detail-card__figure img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .outfit-card__body,
@@ -212,10 +221,35 @@ p {
   margin: 0.75rem 0 1rem;
 }
 
+.outfit-card__items {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
 .detail-card {
   display: grid;
   gap: 1.25rem;
   max-width: 56rem;
+}
+
+.detail-card__player {
+  color: var(--green);
+  font-weight: 800;
+  margin: 0;
+}
+
+.detail-card__figure {
+  background: linear-gradient(140deg, #ccd9d0, #f2f0d0);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  margin: 0;
+  overflow: hidden;
+}
+
+.detail-card__figure figcaption {
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem 1rem;
 }
 
 .detail-list,
