@@ -258,6 +258,25 @@ p {
   gap: 0.4rem;
 }
 
+.auth-switch,
+.form-hint {
+  font-size: 0.95rem;
+}
+
+.auth-switch a {
+  color: var(--green);
+  font-weight: 800;
+}
+
+.form-error {
+  background: #fff1ee;
+  border: 1px solid #ffc7bd;
+  border-radius: 0.75rem;
+  color: #8a1f10;
+  font-size: 0.95rem;
+  padding: 0.75rem 0.9rem;
+}
+
 .try-on-layout,
 .history-list {
   display: grid;
