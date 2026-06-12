@@ -9,7 +9,8 @@
     "noEmit": false,
     "incremental": false,
     "declaration": false,
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["node"]
   },
   "include": ["worker/**/*.ts"],
   "exclude": ["node_modules", "tests"]
